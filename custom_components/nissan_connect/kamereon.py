@@ -621,7 +621,7 @@ class KamereonSession:
 
         # grab an auth ID to use as part of the username/password login request,
         # then move to the regular OAuth2 process
-        auth_url = '{}nissan/bff/v1/login'.format(
+        auth_url = '{}nissan/account/v1/login'.format(
             self.settings['user_base_url']
         )
 
