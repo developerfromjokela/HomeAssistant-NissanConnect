@@ -623,7 +623,7 @@ class KamereonSession:
 
         # grab an auth ID to use as part of the username/password login request,
         # then move to the regular OAuth2 process
-        auth_url = '{}nissan/bff/v1/login'.format(
+        auth_url = '{}nissan/account/v1/login'.format(
             self.settings['user_base_url']
         )
 
@@ -809,6 +809,7 @@ class Vehicle:
     def refresh(self):
         self.refresh_location()
         self.refresh_battery_status()
+        self.refresh_hvac_status()
         time.sleep(30)
         self.fetch_all()
 
@@ -896,7 +897,7 @@ class Vehicle:
         )
         body = resp.json()
         if 'errors' in body:
-            raise ValueError(body['errors'])
+            _LOGGER.error(body['errors'])
         return body
 
     def initiate_srp(self):
@@ -1109,7 +1110,7 @@ class Vehicle:
         )
         body = resp.json()
         if 'errors' in body:
-            raise ValueError(body['errors'])
+            _LOGGER.error(body['errors'])
         return body
 
     def fetch_battery_status(self):
