@@ -1130,6 +1130,7 @@ class Vehicle:
             raise ValueError(body['errors'])
 
         if not 'data' in body or not 'attributes' in body['data']:
+            _LOGGER.warning(body)
             self.battery_supported = False
 
         battery_data = body['data']['attributes']
