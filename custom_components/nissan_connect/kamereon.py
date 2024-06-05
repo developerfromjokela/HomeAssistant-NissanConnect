@@ -17,6 +17,8 @@ import datetime
 import enum
 import json
 import os
+import time
+
 import requests
 import logging
 from typing import List
@@ -621,7 +623,7 @@ class KamereonSession:
 
         # grab an auth ID to use as part of the username/password login request,
         # then move to the regular OAuth2 process
-        auth_url = '{}nissan/account/v1/login'.format(
+        auth_url = '{}nissan/bff/v1/login'.format(
             self.settings['user_base_url']
         )
 
@@ -807,6 +809,7 @@ class Vehicle:
     def refresh(self):
         self.refresh_location()
         self.refresh_battery_status()
+        time.sleep(30)
         self.fetch_all()
 
     def fetch_all(self):
@@ -844,11 +847,9 @@ class Vehicle:
         if 'errors' in body:
             raise ValueError(body['errors'])
         location_data = body['data']['attributes']
-        if "gpsLatitude" in location_data and "gpsLongitude" in location_data:
-            self.location = (location_data['gpsLatitude'], location_data['gpsLongitude'])
-        if "lastUpdateTime" in location_data:
-            self.location_last_updated = datetime.datetime.fromisoformat(
-                location_data['lastUpdateTime'].replace('Z', '+00:00'))
+        self.location = (location_data['gpsLatitude'], location_data['gpsLongitude'])
+        self.location_last_updated = datetime.datetime.fromisoformat(
+            location_data['lastUpdateTime'].replace('Z', '+00:00'))
 
     def refresh_lock_status(self):
         resp = self._post(
@@ -871,8 +872,10 @@ class Vehicle:
             headers={'Content-Type': 'application/vnd.api+json'}
         )
         body = resp.json()
+        # Not all vehicles support lock :D
         if 'errors' in body:
-            raise ValueError(body['errors'])
+            _LOGGER.warning(body['errors'])
+            return
         lock_data = body['data']['attributes']
         self.door_status[Door.FRONT_LEFT] = LockStatus(lock_data.get('doorStatusFrontLeft', LockStatus.CLOSED))
         self.door_status[Door.FRONT_RIGHT] = LockStatus(lock_data.get('doorStatusFrontRight', LockStatus.CLOSED))
@@ -1112,6 +1115,7 @@ class Vehicle:
     def fetch_battery_status(self):
         """The battery-status endpoint isn't just for EV's. ICE Nissans publish the range under this!
            There is no obvious feature to qualify this, so we just suck it and see."""
+        _LOGGER.warning(self.features)
         if not self.battery_supported and Feature.BATTERY_STATUS not in self.features:
             return
         resp = self._get(
@@ -1286,7 +1290,6 @@ class Vehicle:
         if 'errors' in body:
             _LOGGER.warning(body['errors'])
             return
-
         cockpit_data = body['data']['attributes']
         self.eco_score = cockpit_data.get('ecoScore')
         self.fuel_autonomy = cockpit_data.get('fuelAutonomy')
