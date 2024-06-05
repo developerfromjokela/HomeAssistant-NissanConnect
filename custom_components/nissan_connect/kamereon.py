@@ -810,7 +810,6 @@ class Vehicle:
         self.refresh_location()
         self.refresh_battery_status()
         self.refresh_hvac_status()
-        time.sleep(30)
         self.fetch_all()
 
     def fetch_all(self):
