@@ -634,7 +634,7 @@ class KamereonSession:
                     "password": password
                 }
             }
-        }).json()
+        }, headers={'x-app-id': 'jp.co.nissan.nissanconnect.ncx'}).json()
 
         if 'errors' in auth_result:
             raise RuntimeError(auth_result['errors'][0]['detail'])
