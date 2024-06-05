@@ -700,7 +700,7 @@ class Vehicle:
     def __init__(self, data, user_id):
         self.user_id = user_id
         self.vin = data['vin'].upper()
-        self.features = []
+        self.features = [Feature.BATTERY_STATUS]
 
         # Try to parse every feature, but dont fail if we dont recognise one
         for u in data.get('services', []):
