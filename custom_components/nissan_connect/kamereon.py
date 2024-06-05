@@ -29,7 +29,6 @@ _LOGGER = logging.getLogger(__name__)
 API_VERSION = 'protocol=1.0,resource=2.1'
 SRP_KEY = 'D5AF0E14718E662D12DBB4FE42304DF5A8E48359E22261138B40AA16CC85C76A11B43200A1EECB3C9546A262D1FBD51ACE6FCDE558C00665BBF93FF86B9F8F76AA7A53CA74F5B4DFF9A4B847295E7D82450A2078B5A28814A7A07F8BBDD34F8EEB42B0E70499087A242AA2C5BA9513C8F9D35A81B33A121EEF0A71F3F9071CCD'
 
-
 settings_map = {
     'nissan': {
         'EU': {
@@ -39,16 +38,15 @@ settings_map = {
             'auth_base_url': 'https://prod.eu2.auth.kamereon.org/kauth/',
             'realm': 'a-ncb-prod',
             'redirect_uri': 'org.kamereon.service.nci:/oauth2redirect',
-            'car_adapter_base_url': 'https://alliance-platform-caradapter-prod.apps.eu2.kamereon.io/car-adapter/',
-            'notifications_base_url': 'https://alliance-platform-notifications-prod.apps.eu2.kamereon.io/notifications/',
-            'user_adapter_base_url': 'https://alliance-platform-usersadapter-prod.apps.eu2.kamereon.io/user-adapter/',
-            'user_base_url': 'https://nci-bff-web-prod.apps.eu2.kamereon.io/bff-web/'
+            'car_adapter_base_url': 'https://nc-app-bff-prod.apps.jp.kamereon.io/nc-app-bff/alliance/car-adapter/',
+            'notifications_base_url': 'https://nc-app-bff-prod.apps.jp.kamereon.io/nc-app-bff/alliance/notifications/',
+            'user_adapter_base_url': 'https://nc-app-bff-prod.apps.jp.kamereon.io/nc-app-bff/alliance/user-adapter/',
+            'user_base_url': 'https://nc-app-bff-prod.apps.jp.kamereon.io/nc-app-bff/'
         }
     },
     'mitsubishi': {},
     'renault': {},
 }
-
 
 USERS = 'users'
 VEHICLES = 'vehicles'
@@ -534,7 +532,6 @@ class NotificationRuleKey(enum.Enum):
 
 
 class NotificationPriority(enum.Enum):
-
     NONE = None
     P0 = 0
     P1 = 1
@@ -577,7 +574,7 @@ class Notification:
         t = datetime.datetime.strptime(data['timestamp'].split('.')[0], '%Y-%m-%dT%H:%M:%S')
         if '.' in data['timestamp']:
             fraction = data['timestamp'][20:-1]
-            t = t.replace(microsecond=int(fraction) * 10**(6-len(fraction)))
+            t = t.replace(microsecond=int(fraction) * 10 ** (6 - len(fraction)))
         self.time = t
         # List of {'name': 'N', 'type': 'T', 'value': 'V'}
         self.data = data['data']
@@ -588,7 +585,7 @@ class Notification:
         # title is kinda useless, subtitle has better content
         return '{}: {}'.format(self.time, self.subtitle)
 
-    def fetch_details(self, language: Language=None):
+    def fetch_details(self, language: Language = None):
         if language is None:
             language = self.language
         resp = self._get(
@@ -602,7 +599,6 @@ class Notification:
 
 
 class KamereonSession:
-
     tenant = None
     copy_realm = None
 
@@ -611,6 +607,7 @@ class KamereonSession:
         session = requests.session()
         self.session = session
         self._oauth = None
+        self._token = None
         self._user_id = None
         # ugly hack
         os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -624,81 +621,39 @@ class KamereonSession:
             # Use cached credentials
             username = self._username
             password = self._password
-        
+
         # Reset session
         self.session = requests.session()
 
         # grab an auth ID to use as part of the username/password login request,
         # then move to the regular OAuth2 process
-        auth_url = '{}json/realms/root/realms/{}/authenticate'.format(
+        auth_url = '{}nissan/bff/v1/login'.format(
             self.settings['auth_base_url'],
             self.settings['realm'],
         )
-        resp = self.session.post(
-            auth_url,
-            headers={
-                'Accept-Api-Version': API_VERSION,
-                'X-Username': 'anonymous',
-                'X-Password': 'anonymous',
-                'Accept': 'application/json',
-            })
-        next_body = resp.json()
 
-        # insert the username, and password
-        for c in next_body['callbacks']:
-            input_type = c['type']
-            if input_type == 'NameCallback':
-                c['input'][0]['value'] = username
-            elif input_type == 'PasswordCallback':
-                c['input'][0]['value'] = password
+        auth_result = self.session.post(auth_url, data=
+        {
+            "data": {
+                "type": "token",
+                "attributes": {
+                    "username": username,
+                    "password": password
+                }
+            }
+        }).json()
 
-        resp = self.session.post(
-            auth_url,
-            headers={
-                'Accept-Api-Version': API_VERSION,
-                'X-Username': 'anonymous',
-                'X-Password': 'anonymous',
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            },
-            data=json.dumps(next_body))
+        if 'errors' not in auth_result:
+            raise RuntimeError(auth_result['errors'][0]['detail'])
 
-        oauth_data = resp.json()
+        self._token = auth_result["data"]["attributes"]["access_token"]
+        self._oauth = requests.session()
+        self._oauth.headers.update({'Authorization': 'Bearer '+self._token})
 
-        if 'realm' not in oauth_data:
-            raise RuntimeError("Invalid credentials")
-        
-        oauth_authorize_url = '{}oauth2{}/authorize'.format(
-            self.settings['auth_base_url'],
-            oauth_data['realm']
-            )
-        nonce = generate_nonce()
-        resp = self.session.get(
-            oauth_authorize_url,
-            params={
-                'client_id': self.settings['client_id'],
-                'redirect_uri': self.settings['redirect_uri'],
-                'response_type': 'code',
-                'scope': self.settings['scope'],
-                'nonce': nonce,
-            },
-            allow_redirects=False)
-        oauth_authorize_url = resp.headers['location']
 
-        oauth_token_url = '{}oauth2{}/access_token'.format(
-            self.settings['auth_base_url'],
-            oauth_data['realm']
-            )
-        self._oauth = OAuth2Session(
-            client_id=self.settings['client_id'],
-            redirect_uri=self.settings['redirect_uri'],
-            scope=self.settings['scope'])
-        self._oauth._client.nonce = nonce
-        self._oauth.fetch_token(
-            oauth_token_url,
-            authorization_response=oauth_authorize_url,
-            client_secret=self.settings['client_secret'],
-            include_client_id=True)
+
+
+
 
     @property
     def oauth(self):
@@ -718,10 +673,13 @@ class KamereonSession:
 
     def fetch_vehicles(self):
         resp = self.oauth.get(
-            '{}v5/users/{}/cars'.format(self.settings['user_base_url'], self.user_id)
+            '{}nissan/account/v1/token-info'.format(self.settings['user_base_url'])
         )
         vehicles = []
-        for vehicle_data in resp.json()['data']:
+        for vehicle_baseinfo in resp.json()['data']['attributes']['vehicles']:
+            vehicle_data = self.oauth.get(
+                '{}nissan/config/v1/cars/{}/details'.format(self.settings['user_base_url'], vehicle_baseinfo["vin"])).json()
+            vehicle_data["services"] = vehicle_baseinfo["services"]
             vehicle = Vehicle(vehicle_data, self.user_id)
             vehicles.append(vehicle)
             _registry[VEHICLES][vehicle.vin] = vehicle
@@ -729,7 +687,6 @@ class KamereonSession:
 
 
 class NCISession(KamereonSession):
-
     tenant = 'nissan'
     copy_realm = 'P_NCB'
 
@@ -753,13 +710,12 @@ class Vehicle:
 
         # Try to parse every feature, but dont fail if we dont recognise one
         for u in data.get('services', []):
-            if u['activationState'] == "ACTIVATED":
-                try:
-                    self.features.append(Feature(str(u['id'])))
-                except ValueError:
-                    _LOGGER.debug(f"Unknown feature {str(u['id'])}")
-                    pass
-        
+            try:
+                self.features.append(Feature(str(u)))
+            except ValueError:
+                _LOGGER.debug(f"Unknown feature {str(u)}")
+                pass
+
         _LOGGER.debug(f"Active features: {self.features}")
 
         self.can_generation = data.get('canGeneration')
@@ -838,7 +794,7 @@ class Vehicle:
             _LOGGER.debug("Refreshing session and retrying request as token expired")
             self.session.login()
             return self.session.oauth.get(url, headers=headers, params=params)
-        
+
         return resp
 
     def _post(self, url, data=None, headers=None):
@@ -853,7 +809,7 @@ class Vehicle:
             _LOGGER.debug("Refreshing session and retrying request as token expired")
             self.session.login()
             return self.session.oauth.post(url, data=data, headers=headers)
-        
+
         return resp
 
     def refresh(self):
@@ -871,7 +827,7 @@ class Vehicle:
     def refresh_location(self):
         if Feature.MY_CAR_FINDER not in self.features:
             return
-        
+
         resp = self._post(
             '{}v1/cars/{}/actions/refresh-location'.format(self.session.settings['car_adapter_base_url'], self.vin),
             data=json.dumps({
@@ -887,7 +843,7 @@ class Vehicle:
     def fetch_location(self):
         if Feature.MY_CAR_FINDER not in self.features:
             return
-        
+
         resp = self._get(
             '{}v1/cars/{}/location'.format(self.session.settings['car_adapter_base_url'], self.vin),
             headers={'Content-Type': 'application/vnd.api+json'}
@@ -897,7 +853,8 @@ class Vehicle:
             raise ValueError(body['errors'])
         location_data = body['data']['attributes']
         self.location = (location_data['gpsLatitude'], location_data['gpsLongitude'])
-        self.location_last_updated = datetime.datetime.fromisoformat(location_data['lastUpdateTime'].replace('Z','+00:00'))
+        self.location_last_updated = datetime.datetime.fromisoformat(
+            location_data['lastUpdateTime'].replace('Z', '+00:00'))
 
     def refresh_lock_status(self):
         resp = self._post(
@@ -929,7 +886,8 @@ class Vehicle:
         self.door_status[Door.REAR_RIGHT] = LockStatus(lock_data.get('doorStatusRearRight', LockStatus.CLOSED))
         self.door_status[Door.HATCH] = LockStatus(lock_data.get('hatchStatus', LockStatus.CLOSED))
         self.lock_status = LockStatus(lock_data.get('lockStatus', LockStatus.LOCKED))
-        self.lock_status_last_updated = datetime.datetime.fromisoformat(lock_data['lastUpdateTime'].replace('Z','+00:00'))
+        self.lock_status_last_updated = datetime.datetime.fromisoformat(
+            lock_data['lastUpdateTime'].replace('Z', '+00:00'))
 
     def refresh_hvac_status(self):
         resp = self._post(
@@ -1002,7 +960,7 @@ class Vehicle:
         DeleteSpeedRestrictions
     """
 
-    def control_charging(self, action: str, srp: str=None):
+    def control_charging(self, action: str, srp: str = None):
         assert action in ('stop', 'start')
         if action == 'start' and Feature.CHARGING_START not in self.features:
             return
@@ -1028,7 +986,7 @@ class Vehicle:
             raise ValueError(body['errors'])
         return body
 
-    def control_horn_lights(self, action: str, target: str, duration: int=5, srp: str=None):
+    def control_horn_lights(self, action: str, target: str, duration: int = 5, srp: str = None):
         if Feature.HORN_AND_LIGHTS not in self.features:
             return
         assert target in ('horn_lights', 'lights', 'horn')
@@ -1055,7 +1013,8 @@ class Vehicle:
             raise ValueError(body['errors'])
         return body
 
-    def set_hvac_status(self, action: HVACAction, target_temperature: int=21, start: datetime.datetime=None, srp: str=None):
+    def set_hvac_status(self, action: HVACAction, target_temperature: int = 21, start: datetime.datetime = None,
+                        srp: str = None):
         if Feature.CLIMATE_ON_OFF not in self.features:
             return
 
@@ -1087,7 +1046,7 @@ class Vehicle:
             raise ValueError(body['errors'])
         return body
 
-    def lock_unlock(self, srp: str, action: str, group: LockableDoorGroup=None):
+    def lock_unlock(self, srp: str, action: str, group: LockableDoorGroup = None):
         if Feature.APP_DOOR_LOCKING not in self.features:
             return
         assert action in ('lock', 'unlock')
@@ -1112,16 +1071,16 @@ class Vehicle:
             raise ValueError(body['errors'])
         return body
 
-    def lock(self, srp: str, group: LockableDoorGroup=None):
+    def lock(self, srp: str, group: LockableDoorGroup = None):
         return self.lock_unlock(srp, 'lock', group)
 
-    def unlock(self, srp: str, group: LockableDoorGroup=None):
+    def unlock(self, srp: str, group: LockableDoorGroup = None):
         return self.lock_unlock(srp, 'unlock', group)
 
     def fetch_hvac_status(self):
         if Feature.INTERIOR_TEMP_SETTINGS not in self.features and Feature.TEMPERATURE not in self.features:
             return
-        
+
         resp = self._get(
             '{}v1/cars/{}/hvac-status'.format(self.session.settings['car_adapter_base_url'], self.vin),
             headers={'Content-Type': 'application/vnd.api+json'}
@@ -1136,13 +1095,16 @@ class Vehicle:
         if 'hvacStatus' in hvac_data:
             self.hvac_status = HVACStatus(hvac_data['hvacStatus'])
         if 'nextHvacStartDate' in hvac_data:
-            self.next_hvac_start_date = datetime.datetime.fromisoformat(hvac_data['nextHvacStartDate'].replace('Z','+00:00'))
+            self.next_hvac_start_date = datetime.datetime.fromisoformat(
+                hvac_data['nextHvacStartDate'].replace('Z', '+00:00'))
         if 'lastUpdateTime' in hvac_data:
-            self.hvac_status_last_updated = datetime.datetime.fromisoformat(hvac_data['lastUpdateTime'].replace('Z','+00:00'))
+            self.hvac_status_last_updated = datetime.datetime.fromisoformat(
+                hvac_data['lastUpdateTime'].replace('Z', '+00:00'))
 
     def refresh_battery_status(self):
         resp = self._post(
-            '{}v1/cars/{}/actions/refresh-battery-status'.format(self.session.settings['car_adapter_base_url'], self.vin),
+            '{}v1/cars/{}/actions/refresh-battery-status'.format(self.session.settings['car_adapter_base_url'],
+                                                                 self.vin),
             data=json.dumps({
                 'data': {'type': 'RefreshBatteryStatus'}
             }),
@@ -1184,7 +1146,7 @@ class Vehicle:
         }
         self.range_hvac_off = battery_data.get('rangeHvacOff')
         self.range_hvac_on = battery_data.get('rangeHvacOn')
-        
+
         # For ICE vehicles, we should get the range at least. If not, dont bother again
         if self.range_hvac_on is None and Feature.BATTERY_STATUS not in self.features:
             self.battery_supported = False
@@ -1193,12 +1155,14 @@ class Vehicle:
         self.charging = ChargingStatus(battery_data.get('chargeStatus', 0))
         self.plugged_in = PluggedStatus(battery_data.get('plugStatus', 0))
         if 'vehiclePlugTimestamp' in battery_data:
-            self.plugged_in_time = datetime.datetime.fromisoformat(battery_data['vehiclePlugTimestamp'].replace('Z','+00:00'))
+            self.plugged_in_time = datetime.datetime.fromisoformat(
+                battery_data['vehiclePlugTimestamp'].replace('Z', '+00:00'))
         if 'vehicleUnplugTimestamp' in battery_data:
-            self.unplugged_time = datetime.datetime.fromisoformat(battery_data['vehicleUnplugTimestamp'].replace('Z','+00:00'))
+            self.unplugged_time = datetime.datetime.fromisoformat(
+                battery_data['vehicleUnplugTimestamp'].replace('Z', '+00:00'))
         if 'lastUpdateTime' in battery_data:
-            self.battery_status_last_updated = datetime.datetime.fromisoformat(battery_data['lastUpdateTime'].replace('Z','+00:00'))
-
+            self.battery_status_last_updated = datetime.datetime.fromisoformat(
+                battery_data['lastUpdateTime'].replace('Z', '+00:00'))
 
     def set_energy_unit_cost(self, cost):
         resp = self._post(
@@ -1213,7 +1177,7 @@ class Vehicle:
         if 'errors' in body:
             raise ValueError(body['errors'])
 
-    def fetch_trip_histories(self, period: Period=None, start: datetime.date=None, end: datetime.date=None):
+    def fetch_trip_histories(self, period: Period = None, start: datetime.date = None, end: datetime.date = None):
         if period is None:
             period = Period.DAILY
         if start is None and end is None and period == Period.MONTHLY:
@@ -1238,22 +1202,21 @@ class Vehicle:
 
     def fetch_notifications(
             self,
-            language: Language=None,
-            category_key: NotificationCategoryKey=None,
-            status: NotificationStatus=None,
-            start: datetime.datetime=None,
-            end: datetime.datetime=None,
+            language: Language = None,
+            category_key: NotificationCategoryKey = None,
+            status: NotificationStatus = None,
+            start: datetime.datetime = None,
+            end: datetime.datetime = None,
             # offset
-            from_: int=1,
+            from_: int = 1,
             # limit
-            to: int=20,
-            order: Order=None
-            ):
+            to: int = 20,
+            order: Order = None
+    ):
 
         if language is None:
             language = Language.EN
         params = {
-            'realm': self.session.copy_realm,
             'langCode': language.value,
         }
         if category_key is not None:
@@ -1271,7 +1234,8 @@ class Vehicle:
                 # Assume UTC
                 params['end'] += 'Z'
         resp = self._get(
-            '{}v2/notifications/users/{}/vehicles/{}'.format(self.session.settings['notifications_base_url'], self.user_id, self.vin),
+            '{}v1/notifications/users/{}/vehicles/{}'.format(self.session.settings['notifications_base_url'],
+                                                             self.user_id, self.vin),
             params=params
         )
         body = resp.json()
@@ -1284,7 +1248,8 @@ class Vehicle:
         to the one held locally (read / unread)."""
 
         resp = self._post(
-            '{}v2/notifications/users/{}/vehicles/{}'.format(self.session.settings['notifications_base_url'], self.user_id, self.vin),
+            '{}v1/notifications/users/{}/vehicles/{}'.format(self.session.settings['notifications_base_url'],
+                                                             self.user_id, self.vin),
             data=json.dumps([
                 {'notificationId': m.id, 'status': m.status.value}
                 for m in messages
@@ -1295,14 +1260,15 @@ class Vehicle:
             raise ValueError(body['errors'])
         return body
 
-    def fetch_notification_settings(self, language: Language=None):
+    def fetch_notification_settings(self, language: Language = None):
         if language is None:
             language = Language.EN
         params = {
             'langCode': language.value,
         }
         resp = self._get(
-            '{}v1/rules/settings/users/{}/vehicles/{}'.format(self.session.settings['notifications_base_url'], self.user_id, self.vin),
+            '{}v1/rules/settings/users/{}/vehicles/{}'.format(self.session.settings['notifications_base_url'],
+                                                              self.user_id, self.vin),
             params=params
         )
         body = resp.json()
@@ -1345,8 +1311,8 @@ class TripSummary:
         self.trip_count = data['tripsNumber']
         self.total_distance = data['distance']  # km
         self.total_duration = data['duration']  # minutes
-        self.first_trip_start = datetime.datetime.fromisoformat(data['firstTripStart'].replace('Z','+00:00'))
-        self.last_trip_end = datetime.datetime.fromisoformat(data['lastTripEnd'].replace('Z','+00:00'))
+        self.first_trip_start = datetime.datetime.fromisoformat(data['firstTripStart'].replace('Z', '+00:00'))
+        self.last_trip_end = datetime.datetime.fromisoformat(data['lastTripEnd'].replace('Z', '+00:00'))
         self.consumed_fuel = data['consumedFuel']  # litres
         self.consumed_electricity = data['consumedElectricity']  # W
         self.saved_electricity = data['savedElectricity']  # W
@@ -1394,8 +1360,8 @@ class NotificationRule:
                 data['notificationTitle'],
                 data['notificationMessage'],
                 self.category,
-                )
-    
+            )
+
     def __str__(self):
         return '{}: {} ({})'.format(
             self.title or self.key,
@@ -1408,7 +1374,7 @@ class SRP:
 
     @classmethod
     def enroll(cls, user_id, vin):
-        salt, verifier = '0'*20, 'ABCDEFGH'*64
+        salt, verifier = '0' * 20, 'ABCDEFGH' * 64
         # salt = 20 hex chars, verifier = 512 hex chars
         return (salt, verifier)
 
