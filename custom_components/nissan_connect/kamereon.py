@@ -31,12 +31,8 @@ SRP_KEY = 'D5AF0E14718E662D12DBB4FE42304DF5A8E48359E22261138B40AA16CC85C76A11B43
 
 settings_map = {
     'nissan': {
-        'EU': {
-            'client_id': 'a-ncb-nc-android-prod',
-            'client_secret': '6GKIax7fGT5yPHuNmWNVOc4q5POBw1WRSW39ubRA8WPBmQ7MOxhm75EsmKMKENem',
-            'scope': 'openid profile vehicles',
+        'JP': {
             'auth_base_url': 'https://prod.eu2.auth.kamereon.org/kauth/',
-            'realm': 'a-ncb-prod',
             'redirect_uri': 'org.kamereon.service.nci:/oauth2redirect',
             'car_adapter_base_url': 'https://nc-app-bff-prod.apps.jp.kamereon.io/nc-app-bff/alliance/car-adapter/',
             'notifications_base_url': 'https://nc-app-bff-prod.apps.jp.kamereon.io/nc-app-bff/alliance/notifications/',
