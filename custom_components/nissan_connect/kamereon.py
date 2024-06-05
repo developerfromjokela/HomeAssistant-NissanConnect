@@ -636,9 +636,8 @@ class KamereonSession:
             }
         }).json()
 
-        if 'errors' not in auth_result:
+        if 'errors' in auth_result:
             raise RuntimeError(auth_result['errors'][0]['detail'])
-        _LOGGER.warning(json.dumps(auth_result))
         self._token = auth_result["data"]["attributes"]["access_token"]
         self._oauth = requests.session()
         self._oauth.headers.update({'Authorization': 'Bearer '+self._token})
