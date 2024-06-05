@@ -1280,8 +1280,10 @@ class Vehicle:
             "{}v1/cars/{}/cockpit".format(self.session.settings['car_adapter_base_url'], self.vin)
         )
         body = resp.json()
+        # Not all vehicles support cockpit :D
         if 'errors' in body:
-            raise ValueError(body['errors'])
+            _LOGGER.warning(body['errors'])
+            return
 
         cockpit_data = body['data']['attributes']
         self.eco_score = cockpit_data.get('ecoScore')
