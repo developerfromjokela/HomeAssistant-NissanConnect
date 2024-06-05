@@ -3,6 +3,9 @@ from homeassistant.config_entries import (ConfigFlow, OptionsFlow)
 from .const import DOMAIN, CONFIG_VERSION, DEFAULT_INTERVAL_POLL, DEFAULT_INTERVAL_CHARGING, DEFAULT_INTERVAL_STATISTICS, DEFAULT_INTERVAL_FETCH, DEFAULT_REGION, REGIONS
 from .kamereon import NCISession
 import homeassistant.helpers.config_validation as cv
+import logging
+
+_LOGGER = logging.getLogger(__name__)
 
 USER_SCHEMA = vol.Schema({
     vol.Required("email"): cv.string,
@@ -84,7 +87,8 @@ class NissanOptionsFlow(OptionsFlow):
                                                         options["email"],
                                                         options["password"]
                                                         )
-                except:
+                except Exception as e:
+                    _LOGGER.critical(e, exc_info=True)
                     errors["base"] = "auth_error"
 
             # If we have no errors, update the data array
