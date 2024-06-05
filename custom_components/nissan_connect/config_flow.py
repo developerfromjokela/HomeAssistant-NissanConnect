@@ -46,6 +46,7 @@ class NissanConfigFlow(ConfigFlow, domain=DOMAIN):
                                                        info["password"]
                                                        )
             except:
+                raise e
                 errors["base"] = "auth_error"
 
             if len(errors) == 0:
