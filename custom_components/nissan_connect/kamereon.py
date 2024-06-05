@@ -848,9 +848,11 @@ class Vehicle:
         if 'errors' in body:
             raise ValueError(body['errors'])
         location_data = body['data']['attributes']
-        self.location = (location_data['gpsLatitude'], location_data['gpsLongitude'])
-        self.location_last_updated = datetime.datetime.fromisoformat(
-            location_data['lastUpdateTime'].replace('Z', '+00:00'))
+        if "gpsLatitude" in location_data and "gpsLongitude" in location_data:
+            self.location = (location_data['gpsLatitude'], location_data['gpsLongitude'])
+        if "lastUpdateTime" in location_data:
+            self.location_last_updated = datetime.datetime.fromisoformat(
+                location_data['lastUpdateTime'].replace('Z', '+00:00'))
 
     def refresh_lock_status(self):
         resp = self._post(
