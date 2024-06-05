@@ -625,7 +625,7 @@ class KamereonSession:
             self.settings['user_base_url']
         )
 
-        auth_result = self.session.post(auth_url, data=
+        auth_result = self.session.post(auth_url, json=
         {
             "data": {
                 "type": "token",
