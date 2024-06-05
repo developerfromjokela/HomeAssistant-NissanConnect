@@ -48,8 +48,8 @@ class NissanConfigFlow(ConfigFlow, domain=DOMAIN):
                                                        info["email"],
                                                        info["password"]
                                                        )
-            except:
-                raise e
+            except Exception as e:
+                _LOGGER.critical(e, exc_info=True)
                 errors["base"] = "auth_error"
 
             if len(errors) == 0:
