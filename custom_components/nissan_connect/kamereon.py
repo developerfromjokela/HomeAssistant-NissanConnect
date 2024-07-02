@@ -1191,8 +1191,8 @@ class Vehicle:
             '{}v1/cars/{}/trip-history'.format(self.session.settings['car_adapter_base_url'], self.vin),
             params={
                 'type': period.value,
-                'start': start.isoformat(),
-                'end': end.isoformat()
+                'start': start.isoformat().replace("-", ""),
+                'end': end.isoformat().replace("-", "")
             }
         )
         body = resp.json()
