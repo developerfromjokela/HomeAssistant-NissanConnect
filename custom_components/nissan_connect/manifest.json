@@ -1,14 +1,14 @@
 {
-  "domain": "nissan_connect",
-  "name": "NissanConnect",
+  "domain": "nissan_connect_JP",
+  "name": "NissanConnect [JP]",
   "codeowners": [
-    "@dan-r"
+    "@developerfromjokela"
   ],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/developerfromjokela/HomeAssistant-NissanConnect/",
+  "documentation": "https://github.com/developerfromjokela/HomeAssistant-NissanConnect-JP/",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/developerfromjokela/HomeAssistant-NissanConnect/issues",
+  "issue_tracker": "https://github.com/developerfromjokela/HomeAssistant-NissanConnect-JP/issues",
   "requirements": ["requests", "requests_oauthlib", "pytz"],
   "version": "1.0.0"
 }
