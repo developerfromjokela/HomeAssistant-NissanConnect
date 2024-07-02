@@ -1,4 +1,4 @@
-DOMAIN = "nissan_connect"
+DOMAIN = "nissan_connect_jp"
 CONFIG_VERSION = 1
 ENTITY_TYPES = ["binary_sensor", "sensor", "button", "climate", "device_tracker"]
 
