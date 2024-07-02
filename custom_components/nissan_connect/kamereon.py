@@ -1315,9 +1315,9 @@ class TripSummary:
             self.first_trip_start = datetime.datetime.fromisoformat(data['firstTripStart'].replace('Z', '+00:00'))
         if 'lastTripEnd' in data:
             self.last_trip_end = datetime.datetime.fromisoformat(data['lastTripEnd'].replace('Z', '+00:00'))
-        self.consumed_fuel = data['consumedFuel']  # litres
-        self.consumed_electricity = data['consumedElectricity']  # W
-        self.saved_electricity = data['savedElectricity']  # W
+        self.consumed_fuel = data.get('consumedFuel')  # litres
+        self.consumed_electricity = data.get('consumedElectricity')  # W
+        self.saved_electricity = data.get('savedElectricity')  # W
         if 'day' in data:
             self.start = self.end = datetime.date(int(data['day'][:4]), int(data['day'][4:6]), int(data['day'][6:]))
         elif 'month' in data:
