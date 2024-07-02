@@ -1116,7 +1116,6 @@ class Vehicle:
     def fetch_battery_status(self):
         """The battery-status endpoint isn't just for EV's. ICE Nissans publish the range under this!
            There is no obvious feature to qualify this, so we just suck it and see."""
-        _LOGGER.warning(self.features)
         if not self.battery_supported and Feature.BATTERY_STATUS not in self.features:
             return
         resp = self._get(
