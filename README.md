@@ -1,15 +1,15 @@
 # NissanConnect [JAPAN] for Home Assistant
 
-An unofficial integration for interacting with Nissan Connect Japan vehicles. Based on the work of [mitchellrj](https://github.com/mitchellrj), [tobiaswk](https://github.com/Tobiaswk/dartnissanconnect) and [dan-r](https://github.com/dan-r/HomeAssistant-NissanConnect). I have no affiliation with Nissan besides owning one of their cars.
+An unofficial integration for interacting with Nissan Connect Japan EV vehicles. Based on the work of [mitchellrj](https://github.com/mitchellrj), [tobiaswk](https://github.com/Tobiaswk/dartnissanconnect) and [dan-r](https://github.com/dan-r/HomeAssistant-NissanConnect). I have no affiliation with Nissan besides owning one of their cars.
 
 If you find any bugs or would like to request a feature, please open an issue.
 
 ## Tested Vehicles
 This integration has been tested with the following vehicles:
 * Nissan Leaf (2012)
-* Any other vehicle that works using app should work
+* Any other EVvehicle that works using app should work. ICE-cars have a separate app, and I'm not sure if it works.
 
-### Only for japan!
+### Only for Japan!
 The API for NissanConnect app for use in Japan. Underlying authentication method and API paths are different compared to US and EU versions. Japanese app uses username and password for sign-in, vs OAUTH in EU.
 
 ## Installation
