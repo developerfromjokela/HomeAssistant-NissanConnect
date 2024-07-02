@@ -1311,8 +1311,10 @@ class TripSummary:
         self.trip_count = data['tripsNumber']
         self.total_distance = data['distance']  # km
         self.total_duration = data['duration']  # minutes
-        self.first_trip_start = datetime.datetime.fromisoformat(data['firstTripStart'].replace('Z', '+00:00'))
-        self.last_trip_end = datetime.datetime.fromisoformat(data['lastTripEnd'].replace('Z', '+00:00'))
+        if 'firstTripStart' in data:
+            self.first_trip_start = datetime.datetime.fromisoformat(data['firstTripStart'].replace('Z', '+00:00'))
+        if 'lastTripEnd' in data:
+            self.last_trip_end = datetime.datetime.fromisoformat(data['lastTripEnd'].replace('Z', '+00:00'))
         self.consumed_fuel = data['consumedFuel']  # litres
         self.consumed_electricity = data['consumedElectricity']  # W
         self.saved_electricity = data['savedElectricity']  # W
