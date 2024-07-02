@@ -116,10 +116,9 @@ class PluggedStatus(enum.Enum):
 
 
 class Period(enum.Enum):
-    DAILY = 0
-    MONTHLY = 1
-    YEARLY = 2
-
+    DAILY = "day"
+    MONTHLY = "month"
+    YEARLY = "year"
 
 class Feature(enum.Enum):
     BREAKDOWN_ASSISTANCE_CALL = '1'
