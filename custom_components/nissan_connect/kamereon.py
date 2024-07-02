@@ -719,7 +719,7 @@ class Vehicle:
         self.engine_type = data.get('engineType')
         self.first_registration_date = data.get('firstRegistrationDate')
         self.ice_or_ev = data.get('iceEvFlag')
-        self.model_name = data.get('model', {}).get('modelName')
+        self.model_name = data.get('model', {}).get('displayModelName')
         self.model_code = data.get('model', {}).get('code')
         self.model_year = data.get('model', {}).get('year')
         self.nickname = data.get('nickname')
