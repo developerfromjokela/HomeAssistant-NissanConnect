@@ -2,34 +2,32 @@
 
 An unofficial integration for interacting with Nissan Connect Japan vehicles. Based on the work of [mitchellrj](https://github.com/mitchellrj), [tobiaswk](https://github.com/Tobiaswk/dartnissanconnect) and [dan-r](https://github.com/dan-r/HomeAssistant-NissanConnect). I have no affiliation with Nissan besides owning one of their cars.
 
-This integration is heavily EV-focussed as thats what I have, and currently has only been confirmed to work in Europe.
-
 If you find any bugs or would like to request a feature, please open an issue.
 
 ## Tested Vehicles
 This integration has been tested with the following vehicles:
-* Nissan Leaf (2012) - EU
+* Nissan Leaf (2012)
 * Any other vehicle that works using app should work
 
 ### Only for japan!
-The API used in Japan, and it has different authentication method and API paths compared to US and EU versions.
+The API for NissanConnect app for use in Japan. Underlying authentication method and API paths are different compared to US and EU versions. Japanese app uses username and password for sign-in, vs OAUTH in EU.
 
 ## Installation
 
 ### HACS
 This is the recommended installation method.
 1. Add this repository to HACS as a [custom repository](https://hacs.xyz/docs/faq/custom_repositories)
-2. Search for and install the NissanConnect addon from HACS
+2. Search for and install the NissanConnect Japan addon from HACS
 3. Restart Home Assistant
 
 ### Manual
-1. Download the [latest release](https://github.com/dan-r/HomeAssistant-NissanConnect/releases)
+1. Download the [latest release](https://github.com/developerfromjokela/HomeAssistant-NissanConnect-JP/releases)
 2. Copy the contents of `custom_components` into the `<config directory>/custom_components` directory of your Home Assistant installation
 3. Restart Home Assistant
 
 
 ## Setup
-From the Home Assistant Integrations page, search for and add the Nissan Connect integration.
+From the Home Assistant Integrations page, search for and add the Nissan Connect Japan integration.
 
 ## Update Time
 Terminology used for this integration:
@@ -42,7 +40,7 @@ To prevent excessive 12v battery drain when plugged in but not charging for exte
 This logic was added to give the benefit of quicker response times on the charging status binary sensor, which can be especially useful when charging with load-balanced or 'smart' chargers.
 
 ## Translations
-Translations are provided for the following languages. If you are a native speaker and spot any mistakes, please let me know.
+Translations are provided for the following languages. If you are a native speaker and spot any mistakes, please let me know. Also, if somebody is interested in making a Japanese translation, you're more than welcome.
 * English
 * French
 * Italian
